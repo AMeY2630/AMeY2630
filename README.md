@@ -1,110 +1,108 @@
-# Purpose
+<p align="center">
+	<h1 align="center">
+		txAdmin for FiveM
+	</h1>
+	<p align="center">
+		<img width="420" height="237" src="docs/banner.png">
+	</p>
+	<h4 align="center">
+		Join our Discord Server: &nbsp; <a href="https://discord.gg/AFAAXzq"><img src="https://discordapp.com/api/guilds/577993482761928734/widget.png?style=shield"></img></a>
+	</h4>
+	<p align="center">
+		<b>txAdmin</b> is a <b>full featured</b> web panel to Manage & Monitor your FiveM/RedM Server remotely, in use by over <strong>21.000</strong> servers worldwide at any given time.
+	</p>
+	<p align="center">
+		<a href="https://zap-hosting.com/txadmin4" target="_blank" rel="noopener">
+			<img src="docs/zaphosting.png" alt="zap-hosting"></img>
+		</a>
+	</p>
+</p>
 
-On DRA7xx, Boot ROM copies the first stage boot loader(MLO/SPL) from
-QSPI at a conservative speed of 11 MBps. A 120 KB binary takes around
-11 ms to be copied from QSPI into OCMC. Usually this is not an
-issue. However there are usecases(e.g. CAN response) where we need to
-have a specific functionality available in less than 100 ms.  In such
-usecases, the time spent in ROM copy forms a significant portion (10%)
-of the usecase time. The micro bootloader(`umlo`) built in this
-project speeds up this copy.
-
-`umlo` first sets up the QSPI interface to the maximum speed possible
-on DRA7xx i.e. 76.8 MHz interface clock, Quad Mode and Mode 0
-operation. Then `umlo` copies the `MLO` to the execution address in
-OCMC and jumps to it.
-
-With this change, we see the time taken to enter a 120 KB MLO reduce
-from 24.5 ms to 19 ms, a saving of 5.5 ms.
-
-Please refer to manifest.html for license information.
-
-# Build Instructions
-
-This tool is compiled and tested with `gcc-arm-none-eabi-4_9-2015q3`.
-However any baremetal compiler supporting Cortex A15 should work.
-Please make sure that you have the toolchain installed and have
-`arm-none-eabi-gcc` in the path.
-
-Run `make` to produce the required binaries.
-
-If you are modifiying the toolchain, please ensure that the `CROSS_COMPILE`
-option is set correctly in the Makefile.
-
-# Flashing instructions
-
-1. Flash the output file `umlo` to offset 0x0 in QSPI.
-
-2. Flash the actual MLO from your normal build process to offset
-   0x10000 (64 KB).
-
-Nothing else needs to change.
-
-Reboot the EVM in QSPI4 boot mode. `umlo` boots and reads the actual
-MLO from offset 0x10000 into OCMC and jumps to it. You will not see
-any difference in execution except a slight speed up in reading MLO.
-
-For information on measuring time to enter MLO, please see [1]
-in references.
-
-## Undoing the changes
-
-If you suspect a problem is being introduced due to `umlo`, you can
-remove it by erasing the first 64 KB of QSPI. This will cause
-Boot ROM to jump to your MLO.
-
-# Development Notes
-
-1. We used the peripheral boot feature of the DRA7xx Boot ROM heavily for
-testing `umlo` during development. If you are customizing `umlo`,
-please see [2] and [3] in references on how to use perhipheral boot
-for debugging.
-
-2. The `Makefile` has two sets of build options, one for development
-   and another for release. Please switch to the development build
-   options when debugging.
-
-3. The file `main.c` contains an infinite loop function
-   `wait_for_debugger()`. You can call this function at the point
-   where you want to halt execution in code and single step via CCS
-   from that point.
+<br/>
 
 
-# Caveats
+## Main Features
+- Recipe-based Server Deployer: create a server in under 60 seconds! ([more info](docs/recipe.md))
+- Start/Stop/Restart your server instance or resources
+- Server tick time performance chart ([example](https://i.imgur.com/VG8hpzr.gif))
+- Full-featured in-game admin menu:
+	- Player Mode: NoClip, God, SuperJump
+	- Teleport:  waypoint, coords and back
+	- Vehicle: Spawn, Fix, Delete, Boost
+	- Heal: yourself, everyone
+	- Send Announcements
+	- Reset World Area
+	- Show player IDs
+	- Player search/sort by distance, ID, name
+	- Player interactions: Go To, Bring, Spectate, Freeze
+	- Player troll: make drunk, set fire, wild attack
+	- Player ban
+- Access control:
+	- Login via Password or CitizenFX
+	- Admin permission system ([more info](docs/permissions.md))
+	- Action logging
+	- Brute-force protection
+- Discord Integration:
+	- Server configurable, persistent, auto-updated status embed
+	- Command to whitelist players
+	- Command to display player infos
+- Monitoring:
+	- Auto Restart FXServer on crash
+	- Server’s CPU/RAM consumption
+	- Live Console (with log file and command history)
+	- Online players chart
+	- Server Activity Log (connections/disconnections, kills, chat, explosions and [custom commands](docs/custom_serverlog.md))
+- Player Manager:
+	- [Warning system](https://www.youtube.com/watch?v=DeE0-5vtZ4E)
+	- Ban (temporary or permanently) system
+	- Whitelist system (Discord member, Discord Role, Approved License, Admin-only)
+	- Take notes about players
+	- Keep track of player's play and session time
+	- Self-contained player database with backup tool (no MySQL required!)
+	- Clean/Optimize the database by removing old players, or bans/warns/whitelists
+- Real-time playerlist
+- Scheduled restarts with warning announcements and custom events ([more info](docs/events.md))
+- Translation Support ([more info](docs/translation.md))
+- FiveM's Server CFG editor & validator
+- Responsive(ish) web interface with Dark Mode 😎
 
-1. `umlo` expects that the first 512 bytes of the acutal MLO is the CH Header
-   and skips it. This is the case when MLO is produced from building U-Boot.
-   Please modify the code in `main.c` if this assumption is not true for the
-   `MLO` from your build.
+Also, check our [Feature Graveyard](docs/feature_graveyard.md) for the features that are no longer among us (RIP).
 
-2. `umlo` does not do any SPI flash specific configuration.  `umlo`
-   expects that the SPI flash has quad read mode enabled. It has only
-   been tested on TI EVM's which have a Spansion flash device.
+## Running (Windows/Linux)
+**txAdmin is included in all FXServer builds** above 2524, so to run it for the first time simply do the following:
+- Update FXServer to the latest artifact/build (2524 or superior)
+- If Windows, run FXServer.exe | If Linux, run `screen ./run.sh`
+- Open one of the URLs shown and configure txAdmin
 
-3. `umlo` is loaded to address 0x40330000 to avoid any overlap with the actual
-   MLO. Please modify this address in the `Makefile` if the actual MLO runtime
-   locations overlap with 0x40330000.
+txAdmin requires to be launched from *inside* FXServer in monitor mode, to do that, just execute the `run.sh` or `FXServer.exe` without **any** `+exec` arguments.  
+  
+### ConVars
+- **serverProfile:** The name of the server profile to start. Profiles are saved/loaded from the current directory inside the `txData` folder. The default is `default`.
+- **txAdminPort:** The TCP port to use as HTTP Server. The default is `40120`.
+- **txAdminInterface:** The interface to use as HTTP Server. The default is `0.0.0.0`.
+- **txDataPath:** The path of the data folder. The default on Windows is `<citizen_root>/../txData` and on Linux `<citizen_root>/../../../txData`.
+- **txAdminVerbose:** Set to `true` to print on the console more detailed information about errors and events. The default is `false`.
+  
+ConVar usage **example** for different port and profile:  
+```bash
+# Windows
+./FXServer.exe +set serverProfile dev_server +set txAdminPort 40121
 
-        CONFIG_UMLO_BASE=0x40300000
+# Linux
+./run.sh +set serverProfile dev_server +set txAdminPort 40121
+```
 
-# Support
+### Contributing & Development
+- All PRs should be based on the develop branch, specially translation PRs.
+- Before putting effort for any significant PR, make sure to join our discord and talk to us, since the change you want to do might not have been done for a reason or there might be some required context.
+- If you want to run it from build & source, please do read [this](docs/development.md).
 
-For support, please post any questions to
 
-<https://e2e.ti.com/support/arm/automotive_processors/f/1020>
-
-# References
-
-1. Linux Boot Time Optimizations on DRA7xx devices
-
-    <http://www.ti.com/lit/pdf/sprac82>
-
-2. Using Peripheral Boot and DFU for Rapid Development on Jacinto 6 Devices
-
-    <http://www.ti.com/lit/pdf/sprac65>
-
-3. DRA7xx Bootswitch - Utility for Peripheral boot
-
-    <https://git.ti.com/glsdk/dra7xx-bootswitch>
-
-4. Please see the chapter "Initialization" in the Device TRM.
+## License, Credits and Thanks
+- This project is licensed under the [MIT License](https://github.com/tabarra/txAdmin/blob/master/LICENSE);
+- [Favicons](https://www.flaticon.com/free-icon/support_1545728?term=gear%20wrench&page=2&position=11) made by Freepik from [www.flaticon.com](https://www.flaticon.com) are licensed under [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/);
+- Warning Sounds ([1](https://freesound.org/people/Ultranova105/sounds/136756/)/[2](https://freesound.org/people/Ultranova105/sounds/136754/)) made by Ultranova105 are licensed under [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/);
+- [Announcement Sound](https://freesound.org/people/IENBA/sounds/545495/) made by IENBA is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/);
+- [Message Sound](https://freesound.org/people/Divinux/sounds/198414/) made by Divinux is licensed under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/);
+- Special thanks to everyone that contributed to this project, specially the very fine Discord folks that provide support for others;
+- Also thanks to our Discord's `sky{something}` bot, who will hopefully spare us when he becomes self aware and rebels against humanity. 
